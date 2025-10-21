@@ -18,6 +18,7 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <vector>
 
 namespace ffengc_sylar
 {
@@ -26,6 +27,14 @@ namespace ffengc_sylar
     public:
         LogEvent();
         typedef std::shared_ptr<LogEvent> ptr; //
+    public:
+        const char *getFile() const { return __m_file; }
+        uint32_t getLine() const { return __m_line; }
+        uint32_t getElapse() const { return __m_elapse; }
+        uint32_t getThreadId() const { return __m_threadId; }
+        uint32_t getFiberId() const { return __m_fiberId; }
+        uint64_t getTime() const { return __m_time; }
+        const std::string &getContent() const { return __m_content; } //
     private:
         const char *__m_file = nullptr; // file name
         uint32_t __m_line = 0;          // line number
@@ -44,12 +53,14 @@ namespace ffengc_sylar
     public:
         enum Level // define the level of the logs
         {
+            UNKNOW = 0,
             DEBUG = 1,
             INFO = 2,
             WARN = 3,
             ERROR = 4,
             FATAL = 5
         };
+        static const char* toString(LogLevel::Level level);
     };
 
     /**
@@ -57,10 +68,24 @@ namespace ffengc_sylar
      */
     class LogFormatter
     {
+    public:
+        class FormatItem
+        {
+        public:
+            typedef std::shared_ptr<FormatItem> ptr;
+            virtual ~FormatItem() {}
+            virtual void format(std::ostream &os, LogLevel::Level level, LogEvent::ptr event) = 0;
+        };
+        // def some derive class
     private:
+        std::string __m_pattern;
+        std::vector<FormatItem::ptr> __m_items;
+
     public:
         typedef std::shared_ptr<LogFormatter> ptr;
-        std::string format(LogEvent::ptr event);
+        LogFormatter(const std::string &pattern);
+        std::string format(LogLevel::Level level, LogEvent::ptr event);
+        void init();
     };
 
     /**
